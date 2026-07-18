@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#f8f9fc" id="theme-color-meta" />
+  <meta name="theme-color" content="#f6f7fc" id="theme-color-meta" />
   <title>应用中心 · liumingmusic</title>
   <meta name="description" content="精选小应用合集，点击即可体验。纯静态、免安装、即开即用。" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%EF%B8%BC%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-  <!-- 背景层 -->
-  <div class="bg-layer" aria-hidden="true"></div>
+  <!-- 背景层：极光光斑 + 噪点 + 光标聚光 -->
+  <div class="aurora" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+    <span class="blob b4"></span>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="spotlight" id="spotlight" aria-hidden="true"></div>
 
   <!-- 顶栏 -->
   <header class="topbar">
     <div class="topbar-inner">
       <a class="site-logo" href="./" aria-label="首页">
-        <span class="logo-icon">✦</span>
+        <span class="logo-mark">✦</span>
         <span class="logo-text">应用中心</span>
       </a>
       <div class="topbar-right">
@@ -35,26 +42,36 @@
 
     <!-- Hero -->
     <section class="hero">
+      <div class="hero-badge">✺ 一站式入口</div>
       <h1 class="hero-title" id="hero-title">我的小应用</h1>
       <p class="hero-desc" id="hero-desc">精选工具与应用，点击即可体验，无需注册安装</p>
+
       <div class="hero-search" id="hero-search" role="search">
         <svg class="hs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input class="hs-input" id="hs-input" type="text" placeholder="搜索应用…" autocomplete="off" spellcheck="false" />
         <kbd class="hs-kbd">/</kbd>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num" id="stat-apps">0</span><span class="stat-label">款应用</span></div>
+        <span class="stat-sep"></span>
+        <div class="stat"><span class="stat-num" id="stat-cats">0</span><span class="stat-label">个分类</span></div>
+        <span class="stat-sep"></span>
+        <div class="stat"><span class="stat-num">∞</span><span class="stat-label">持续上新</span></div>
       </div>
     </section>
 
     <!-- 分类筛选 -->
     <nav class="cat-bar" id="cat-bar" aria-label="分类筛选"></nav>
 
-    <!-- 应用卡片网格 -->
+    <!-- 应用卡片网格（Bento） -->
     <section class="grid" id="app-grid" aria-label="应用列表"></section>
 
   </main>
 
   <!-- 页脚 -->
   <footer class="footer">
-    <span>Powered by GitHub Pages · 纯静态站点</span>
+    <span>纯静态站点 · 由 GitHub Pages 托管 · 即点即达</span>
   </footer>
 
   <!-- 命令面板（搜索） -->
