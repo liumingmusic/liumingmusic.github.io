@@ -9,7 +9,7 @@
     {
       "name": "资讯聚合",
       "apps": [
-        { "title": "热点新闻", "desc": "16 领域每日热点，含今日头版", "url": "https://liumingmusic.github.io/news-hot-site/", "repo": "https://github.com/liumingmusic/news-hot-site", "emoji": "📰", "color": "#ff5a3c", "tags": ["新闻", "每日"], "status": "已上线", "size": "lg" },
+        { "title": "热点新闻", "desc": "16 领域每日热点，含今日头版", "url": "https://liumingmusic.github.io/news-hot-site/", "repo": "https://github.com/liumingmusic/news-hot-site", "emoji": "📰", "color": "#ff5a3c", "tags": ["新闻", "每日"], "status": "已上线", "size": "sm" },
         { "title": "热门仓库", "desc": "GitHub 每日趋势项目", "url": "https://liumingmusic.github.io/github-trending/", "repo": "https://github.com/liumingmusic/github-trending", "emoji": "💻", "color": "#8b7cff", "tags": ["GitHub", "开发"], "status": "已上线", "size": "sm" }
       ]
     },
