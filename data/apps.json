@@ -1,0 +1,44 @@
+{
+  "profile": {
+    "name": "星盘控制台",
+    "handle": "liumingmusic",
+    "subtitle": "我的小应用母舰 · 纯静态 · 免 key · GitHub Pages",
+    "github": "https://github.com/liumingmusic"
+  },
+  "categories": [
+    {
+      "name": "资讯聚合",
+      "apps": [
+        { "title": "热点新闻", "desc": "16 领域每日热点，含今日头版", "url": "https://liumingmusic.github.io/news-hot-site/", "repo": "https://github.com/liumingmusic/news-hot-site", "emoji": "📰", "color": "#ff5a3c", "tags": ["新闻", "每日"], "status": "已上线", "size": "lg" },
+        { "title": "热门仓库", "desc": "GitHub 每日趋势项目", "url": "https://liumingmusic.github.io/github-trending/", "repo": "https://github.com/liumingmusic/github-trending", "emoji": "💻", "color": "#8b7cff", "tags": ["GitHub", "开发"], "status": "已上线", "size": "sm" }
+      ]
+    },
+    {
+      "name": "传统文化",
+      "apps": [
+        { "title": "历史上的今天", "desc": "每日回看历史上的今天", "url": "https://liumingmusic.github.io/this-day-in-history/", "repo": "https://github.com/liumingmusic/this-day-in-history", "emoji": "📜", "color": "#e0a13a", "tags": ["历史"], "status": "已上线", "size": "sm" },
+        { "title": "每日诗词", "desc": "每天一首中国古诗词", "url": "https://liumingmusic.github.io/daily-poetry/", "repo": "https://github.com/liumingmusic/daily-poetry", "emoji": "🪶", "color": "#39c0a0", "tags": ["诗词", "古典"], "status": "已上线", "size": "sm" },
+        { "title": "每日一句", "desc": "每日一句治愈 / 箴言", "url": "https://liumingmusic.github.io/daily-quote/", "repo": "https://github.com/liumingmusic/daily-quote", "emoji": "💬", "color": "#4aa3e0", "tags": ["句子"], "status": "已上线", "size": "sm" },
+        { "title": "成语故事", "desc": "每日一成语，典故 + 释义", "url": "https://liumingmusic.github.io/idiom-story/", "repo": "https://github.com/liumingmusic/idiom-story", "emoji": "📖", "color": "#39c0a0", "tags": ["成语", "启蒙"], "status": "已上线", "size": "sm" }
+      ]
+    },
+    {
+      "name": "学习提升",
+      "apps": [
+        { "title": "英语卡片", "desc": "每日一个英语单词卡", "url": "https://liumingmusic.github.io/english-card/", "repo": "https://github.com/liumingmusic/english-card", "emoji": "🔤", "color": "#5fc98a", "tags": ["英语", "单词"], "status": "已上线", "size": "sm" }
+      ]
+    },
+    {
+      "name": "养生健康",
+      "apps": [
+        { "title": "养生日历", "desc": "二十四节气 + 时辰传统养生", "url": "https://liumingmusic.github.io/health-calendar/", "repo": "https://github.com/liumingmusic/health-calendar", "emoji": "🌿", "color": "#48c78e", "tags": ["养生", "节气"], "status": "已上线", "size": "sm" }
+      ]
+    },
+    {
+      "name": "趣味指引",
+      "apps": [
+        { "title": "塔罗牌", "desc": "趣味自我觉察指引工具", "url": "https://liumingmusic.github.io/tarot/", "repo": "https://github.com/liumingmusic/tarot", "emoji": "🔮", "color": "#a78bfa", "tags": ["塔罗", "趣味"], "status": "已上线", "size": "sm" }
+      ]
+    }
+  ]
+}
