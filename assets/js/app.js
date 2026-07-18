@@ -107,7 +107,7 @@
   /* ---------- 卡片网格（Bento） ---------- */
   function buildCard(app, idx) {
     var wrap = document.createElement("div");
-    wrap.className = "card-wrap" + (app.size === "lg" ? " lg" : "");
+    wrap.className = "card-wrap";
     wrap.dataset.cat = app._cat || "";
     wrap.style.setProperty("--i", idx);
     wrap.style.setProperty("--color", app.color || "#5b6ef5");
@@ -141,7 +141,7 @@
     });
 
     // 3D 倾斜 + 辉光位置 + emoji 视差
-    if (!isTouch && !reduceMotion && app.size !== "lg") {
+    if (!isTouch && !reduceMotion) {
       card.addEventListener("pointermove", function (e) {
         var r = card.getBoundingClientRect();
         var x = (e.clientX - r.left) / r.width;
