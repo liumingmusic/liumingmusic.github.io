@@ -3,134 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0e1a" id="theme-color-meta" />
-  <title>星盘控制台 · 我的小应用母舰</title>
-  <meta name="description" content="深色沉浸式「星盘控制台」——我的全部小应用统一入口，纯静态、免 key、Bento 磁贴启动台。" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%B6%3C/text%3E%3C/svg%3E" />
+  <meta name="theme-color" content="#f8f9fc" id="theme-color-meta" />
+  <title>应用中心 · liumingmusic</title>
+  <meta name="description" content="精选小应用合集，点击即可体验。纯静态、免安装、即开即用。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%EF%B8%BC%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-  <!-- 极光 / 星盘背景层 -->
-  <div class="space-bg" aria-hidden="true"></div>
-  <div class="space-grid" aria-hidden="true"></div>
-  <div class="space-stars" aria-hidden="true"></div>
+  <!-- 背景层 -->
+  <div class="bg-layer" aria-hidden="true"></div>
 
-  <!-- 顶部状态栏（OS 气质） -->
-  <header class="statusbar glass">
-    <div class="sb-left">
-      <div class="sb-logo">✶</div>
-      <div class="sb-id">
-        <div class="sb-name">星盘控制台</div>
-        <div class="sb-handle">@liumingmusic</div>
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="site-logo" href="./" aria-label="首页">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">应用中心</span>
+      </a>
+      <div class="topbar-right">
+        <button class="search-trigger" id="search-trigger" type="button" aria-label="搜索应用">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span>搜索</span>
+        </button>
+        <button class="theme-btn" id="theme-toggle" type="button" aria-label="切换主题"></button>
       </div>
-    </div>
-    <div class="sb-right">
-      <div class="sb-clock">
-        <span id="clock-time">--:--:--</span>
-        <span id="clock-date">----</span>
-      </div>
-      <span class="sb-greet" id="greet">你好</span>
-      <button class="theme-toggle" id="theme-toggle" type="button" title="切换浅色 / 深色主题" aria-label="切换主题">☀️</button>
-      <button class="btn-add" id="btn-add" type="button">＋ 添加应用</button>
-      <a class="sb-github" id="github-link" href="#" target="_blank" rel="noopener" title="GitHub 主页" aria-label="GitHub">⌥</a>
     </div>
   </header>
 
-  <!-- 英雄区 -->
-  <section class="hero">
-    <div class="hero-eyebrow">CONSOLE · 母舰入口</div>
-    <h1 class="hero-title">欢迎回到 <span class="grad">星盘控制台</span></h1>
-    <p class="hero-sub" id="hero-sub">我的小应用母舰 · 纯静态 · 免 key</p>
-    <button class="cmd-trigger glass" id="cmd-trigger" type="button">
-      <span class="cmd-icon">⌘</span>
-      <span class="cmd-text">按 <kbd>/</kbd> 或 <kbd>⌘K</kbd> 搜索应用…</span>
-      <span class="cmd-kbd">⌘K</span>
-    </button>
-  </section>
+  <!-- 主内容 -->
+  <main class="main-wrap">
 
-  <!-- 分类筛选条（JS 动态渲染） -->
-  <nav class="filter-bar" id="filters" aria-label="按分类筛选"></nav>
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title" id="hero-title">我的小应用</h1>
+      <p class="hero-desc" id="hero-desc">精选工具与应用，点击即可体验，无需注册安装</p>
+      <div class="hero-search" id="hero-search" role="search">
+        <svg class="hs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="hs-input" id="hs-input" type="text" placeholder="搜索应用…" autocomplete="off" spellcheck="false" />
+        <kbd class="hs-kbd">/</kbd>
+      </div>
+    </section>
 
-  <!-- Bento 磁贴主区：统一密集网格，无空洞 -->
-  <main id="bento" class="bento" aria-label="应用磁贴"></main>
+    <!-- 分类筛选 -->
+    <nav class="cat-bar" id="cat-bar" aria-label="分类筛选"></nav>
 
-  <footer class="foot">
-    <span>星盘控制台 · 纯静态导航 · 数据来自 <code>data/apps.json</code></span>
-    <span class="foot-dim">点击磁贴直达 · 右上角 </> 看源码 · ＋ 添加你的新应用</span>
+    <!-- 应用卡片网格 -->
+    <section class="grid" id="app-grid" aria-label="应用列表"></section>
+
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <span>Powered by GitHub Pages · 纯静态站点</span>
   </footer>
 
-  <!-- 命令面板 -->
-  <div class="cmdk-overlay" id="cmdk" hidden>
-    <div class="cmdk glass" role="dialog" aria-modal="true" aria-label="命令面板">
-      <div class="cmdk-input-wrap">
-        <span class="cmdk-search">⌕</span>
-        <input id="cmdk-input" class="cmdk-input" placeholder="搜索应用、标签、分类…" autocomplete="off" spellcheck="false" />
-        <button class="cmdk-close" id="cmdk-close" type="button" title="关闭 (Esc)">Esc</button>
+  <!-- 命令面板（搜索） -->
+  <div class="cmd-overlay" id="cmd-overlay" hidden>
+    <div class="cmd-panel" role="dialog" aria-modal="true" aria-label="搜索应用">
+      <div class="cmd-row">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--text3)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="cmd-input" id="cmd-input" type="text" placeholder="搜索应用名称、描述或标签…" autocomplete="off" spellcheck="false" />
+        <button class="cmd-close" id="cmd-close" type="button">Esc</button>
       </div>
-      <ul class="cmdk-list" id="cmdk-list"></ul>
-      <div class="cmdk-hint"><kbd>↑</kbd><kbd>↓</kbd> 选择 · <kbd>Enter</kbd> 打开 · <kbd>Esc</kbd> 关闭</div>
-    </div>
-  </div>
-
-  <!-- 添加应用弹窗 -->
-  <div class="modal-overlay" id="add-modal" hidden>
-    <div class="modal glass" role="dialog" aria-modal="true" aria-label="添加应用">
-      <div class="modal-head"><h3>添加应用</h3><button class="modal-x" id="add-close" type="button" aria-label="关闭">✕</button></div>
-      <form id="add-form" class="modal-form">
-        <label class="fld">标题
-          <input name="title" required maxlength="20" placeholder="例如：我的新工具" />
-        </label>
-        <label class="fld">链接 URL
-          <input name="url" required type="url" placeholder="https://…" />
-        </label>
-        <div class="row">
-          <label class="fld">Emoji
-            <input name="emoji" maxlength="2" placeholder="🚀" value="🚀" />
-          </label>
-          <label class="fld">辉光色
-            <input name="color" type="color" value="#22d3ee" />
-          </label>
-        </div>
-        <div class="row">
-          <label class="fld">分类
-            <select name="category" id="add-category"></select>
-          </label>
-          <label class="fld">状态
-            <select name="status">
-              <option value="已上线">已上线</option>
-              <option value="建设中">建设中</option>
-              <option value="计划中">计划中</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label class="fld">磁贴大小
-            <select name="size">
-              <option value="sm">小 (1×1)</option>
-              <option value="lg">大 (2×2)</option>
-            </select>
-          </label>
-          <label class="fld">标签（逗号分隔）
-            <input name="tags" placeholder="工具, 新" />
-          </label>
-        </div>
-        <label class="fld">简介
-          <input name="desc" maxlength="40" placeholder="一句话描述" />
-        </label>
-        <div class="modal-actions">
-          <button type="button" class="btn-ghost" id="manage-btn">管理我的添加</button>
-          <button type="submit" class="btn-primary">挂上控制台</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 管理我的添加 -->
-  <div class="modal-overlay" id="manage-modal" hidden>
-    <div class="modal glass" role="dialog" aria-modal="true" aria-label="我添加的应用">
-      <div class="modal-head"><h3>我添加的应用</h3><button class="modal-x" id="manage-close" type="button" aria-label="关闭">✕</button></div>
-      <ul class="manage-list" id="manage-list"></ul>
-      <div class="manage-empty" id="manage-empty" hidden>还没有通过页面添加的应用。点「＋ 添加应用」挂一个吧。</div>
+      <ul class="cmd-results" id="cmd-results"></ul>
+      <div class="cmd-hint"><kbd>↑↓</kbd> 选择 &nbsp; <kbd>Enter</kbd> 打开 &nbsp; <kbd>Esc</kbd> 关闭</div>
     </div>
   </div>
 
