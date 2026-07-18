@@ -1,383 +1,340 @@
 /* =========================================================
-   星盘控制台 · 前端逻辑
-   - fetch apps.json + localStorage 覆盖层
-   - 统一密集 Bento 网格（无空洞）
-   - 分类筛选条（点击过滤磁贴，dense 自动重排）
-   - 每磁贴显示分类标签
-   - 实时时钟 / 问候
-   - 命令面板（⌘K / Ctrl+K / /，↑↓ Enter Esc）
-   - 鼠标跟随光晕 + 克制 3D 倾斜 + 首屏 stagger
-   - 深色 / 浅色主题切换（localStorage 持久化）
-   - 页面内「＋ 添加应用」写入 localStorage
+   应用中心 · 前端逻辑（公开展示版）
+   - fetch data/apps.json
+   - 渲染应用卡片网格（自适应，内容不截断）
+   - 分类筛选
+   - 搜索（Hero 输入框 + 命令面板 ⌘K / /）
+   - 深色/浅色主题切换
    ========================================================= */
 (function () {
   "use strict";
 
-  const LS_KEY = "appcenter:userapps:v1";
-  const THEME_KEY = "appcenter:theme";
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  var THEME_KEY = "appcenter:theme";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.from((r || document).querySelectorAll(s)); };
 
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------- 状态 ----------
-  let DATA = null;
-  let userApps = loadUserApps();
-  let mergedCats = [];
-  let allApps = [];
-  let currentFilter = "全部"; // 当前筛选分类
+  /* ---------- 状态 ---------- */
+  var DATA = null;
+  var allApps = [];
+  var currentCat = "全部";
 
-  // ---------- DOM ----------
-  const bento = $("#bento");
-  const clockTime = $("#clock-time");
-  const clockDate = $("#clock-date");
-  const greetEl = $("#greet");
-  const githubLink = $("#github-link");
-  const heroSub = $("#hero-sub");
-  const filtersBar = $("#filters");
-  const themeToggle = $("#theme-toggle");
-  const themeColorMeta = $("#theme-color-meta");
+  /* ---------- DOM ---------- */
+  var appGrid = $("#app-grid");
+  var catBar = $("#cat-bar");
+  var heroTitle = $("#hero-title");
+  var heroDesc = $("#hero-desc");
+  var hsInput = $("#hs-input");
+  var searchTrigger = $("#search-trigger");
+
+  var themeToggle = $("#theme-toggle");
+  var themeMeta = $("#theme-color-meta");
 
   // 命令面板
-  const cmdk = $("#cmdk");
-  const cmdkInput = $("#cmdk-input");
-  const cmdkList = $("#cmdk-list");
-  const cmdTrigger = $("#cmd-trigger");
-  let cmdkActive = -1;
-
-  // 添加 / 管理
-  const addModal = $("#add-modal");
-  const addForm = $("#add-form");
-  const addCategory = $("#add-category");
-  const manageModal = $("#manage-modal");
-  const manageList = $("#manage-list");
-  const manageEmpty = $("#manage-empty");
+  var cmdOverlay = $("#cmd-overlay");
+  var cmdInput = $("#cmd-input");
+  var cmdResults = $("#cmd-results");
+  var cmdClose = $("#cmd-close");
+  var cmdActive = -1;
+  var cmdListRef = [];
 
   /* =====================================================================
-     数据：加载 / 合并
+     工具函数
      ===================================================================== */
-  function loadUserApps() {
-    try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
+  function esc(s) {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
-  function saveUserApps() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(userApps)); } catch (e) {}
-  }
-
-  function merge() {
-    mergedCats = JSON.parse(JSON.stringify((DATA && DATA.categories) || []));
-    userApps.forEach((app) => {
-      let cat = mergedCats.find((c) => c.name === app.category);
-      if (!cat) { cat = { name: app.category, apps: [] }; mergedCats.push(cat); }
-      cat.apps.push(app);
-    });
-    allApps = [];
-    mergedCats.forEach((c) => {
-      (c.apps || []).forEach((a) => allApps.push(Object.assign({}, a, { _category: c.name })));
-    });
+  function isTyping() {
+    var el = document.activeElement;
+    return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
   }
 
   /* =====================================================================
-     主题切换
+     主题
      ===================================================================== */
   function initTheme() {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved === "light") applyTheme("light"); else applyTheme("dark");
+    var saved = localStorage.getItem(THEME_KEY);
+    applyTheme(saved === "dark" ? "dark" : "light"); // 默认浅色
   }
-  function applyTheme(theme) {
-    document.documentElement.dataset.theme = theme;
-    themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
-    themeToggle.title = theme === "dark" ? "切换到浅色模式" : "切换到深色模式";
-    themeColorMeta.content = theme === "dark" ? "#0a0e1a" : "#f5f6fc";
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-  }
-  function toggleTheme() {
-    const cur = document.documentElement.dataset.theme || "dark";
-    applyTheme(cur === "dark" ? "light" : "dark");
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    themeToggle.textContent = t === "dark" ? "☀️" : "🌙";
+    themeToggle.title = t === "dark" ? "切换到浅色" : "切换到深色";
+    themeMeta.content = t === "dark" ? "#0c1022" : "#f8f9fc";
+    try { localStorage.setItem(THEME_KEY, t); } catch (_) {}
   }
 
   /* =====================================================================
-     渲染：分类筛选条 + 统一 Bento 网格
+     数据加载与合并
      ===================================================================== */
-  function renderProfile() {
-    if (!DATA || !DATA.profile) return;
-    const p = DATA.profile;
-    if (p.github) githubLink.href = p.github;
-    if (p.subtitle) heroSub.textContent = p.subtitle;
-    document.title = (p.name || "星盘控制台") + " · 我的小应用母舰";
-  }
-
-  /** 渲染分类筛选条 */
-  function renderFilters() {
-    const names = ["全部"].concat(mergedCats.map((c) => c.name));
-    filtersBar.innerHTML = "";
-    names.forEach((name, i) => {
-      const chip = document.createElement("button");
-      chip.className = "filter-chip" + (name === currentFilter ? " active" : "");
-      chip.type = "button";
-      chip.textContent = name === "全部" ? "全部应用" : name;
-      chip.addEventListener("click", () => setFilter(name));
-      filtersBar.appendChild(chip);
-      if (!reduceMotion) { chip.style.opacity = "0"; chip.style.animation = `fadeIn .25s ${i * 50}ms ease forwards`; }
+  function flattenApps() {
+    allApps = [];
+    if (!DATA || !DATA.categories) return;
+    DATA.categories.forEach(function (cat) {
+      (cat.apps || []).forEach(function (app) {
+        allApps.push(Object.assign({}, app, { _cat: cat.name }));
+      });
     });
   }
 
-  /** 切换筛选 */
-  function setFilter(catName) {
-    currentFilter = catName;
-    $$(".filter-chip", filtersBar).forEach((el) =>
-      el.classList.toggle("active", el.textContent.trim() === catName || (catName === "全部" && i === 0))
-    );
-    // 精确匹配 active class
-    $$(".filter-chip", filtersBar).forEach(el => {
-      const t = el.textContent.trim();
-      el.classList.toggle("active",
-        (catName === "全部" && t === "全部应用") || t === catName);
+  /* =====================================================================
+     渲染：分类筛选
+     ===================================================================== */
+  function renderCats() {
+    var names = ["全部"];
+    if (DATA && DATA.categories) {
+      DATA.categories.forEach(function (c) { names.push(c.name); });
+    }
+    catBar.innerHTML = "";
+    names.forEach(function (name, i) {
+      var btn = document.createElement("button");
+      btn.className = "cat-chip" + (name === currentCat ? " active" : "");
+      btn.type = "button";
+      btn.textContent = name;
+      btn.addEventListener("click", function () { setCat(name); });
+      catBar.appendChild(btn);
+      if (!reduceMotion) {
+        btn.style.opacity = "0";
+        btn.style.animation = "fadeIn .25s " + (i * 50) + "ms ease forwards";
+      }
+    });
+  }
+  function setCat(name) {
+    currentCat = name;
+    $$(".cat-chip", catBar).forEach(function (el) {
+      el.classList.toggle("active", el.textContent === name);
     });
     applyFilter();
   }
 
-  /** 应用筛选到网格 */
-  function applyFilter() {
-    $$(".tile", bento).forEach((tile) => {
-      tile.classList.toggle(
-        "filtered-out",
-        currentFilter !== "全部" && tile.dataset.cat !== currentFilter
-      );
+  /* =====================================================================
+     渲染：卡片网格
+     ===================================================================== */
+  function renderGrid() {
+    appGrid.innerHTML = "";
+    allApps.forEach(function (app, i) {
+      var card = buildCard(app, i);
+      appGrid.appendChild(card);
     });
   }
 
-  /** 渲染统一 Bento 网格（所有磁贴混排，dense 无空洞） */
-  function renderBento() {
-    bento.innerHTML = "";
-    let order = 0;
+  function buildCard(app, idx) {
+    var card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("role", "link");
+    card.tabIndex = 0;
+    card.dataset.cat = app._cat || "";
+    card.style.setProperty("--card-accent", app.color || "#6c8cff");
+    if (!reduceMotion) {
+      card.style.animationDelay = Math.min(idx * 50, 800) + "ms";
+    }
 
-    allApps.forEach((app) => {
-      const tile = buildTile(app, order++);
-      bento.appendChild(tile);
-    });
-  }
+    // 标签 HTML
+    var tagsHtml = (app.tags || []).map(function (t) {
+      return '<span class="card-tag">' + esc(t) + '</span>';
+    }).join("");
 
-  function buildTile(app, order) {
-    const el = document.createElement("div");
-    el.className = "tile" + (app.size === "lg" ? " lg" : "");
-    el.style.setProperty("--glow", app.color || "#22d3ee");
-    el.setAttribute("role", "link");
-    el.setAttribute("tabindex", "0");
-    el.dataset.url = app.url || "#";
-    el.dataset.cat = app._category || ""; // 用于分类筛选
-    if (!reduceMotion) el.style.animationDelay = Math.min(order * 45, 900) + "ms";
+    card.innerHTML =
+      '<span class="card-emoji">' + esc(app.emoji || '✦') + '</span>' +
+      '<span class="card-cat">' + esc(app._cat || '') + '</span>' +
+      '<div class="card-title">' + esc(app.title || '未命名') + '</div>' +
+      '<div class="card-desc">' + esc(app.desc || '') + '</div>' +
+      '<div class="card-foot">' +
+        '<div class="card-tags">' + tagsHtml + '</div>' +
+        '<span class="card-arrow">→</span>' +
+      '</div>';
 
-    const badgeClass =
-      app.status === "建设中" ? "badge-build" : app.status === "计划中" ? "badge-plan" : "badge-on";
-    const badgeText = app.status || "已上线";
-
-    el.innerHTML = `
-      <span class="tile-badge ${badgeClass}">${escapeHtml(badgeText)}</span>
-      <span class="tile-emoji">${escapeHtml(app.emoji || "✦")}</span>
-      <div class="tile-cat">${escapeHtml(app._category || "")}</div>
-      <div class="tile-title">${escapeHtml(app.title || "未命名")}</div>
-      <div class="tile-desc">${escapeHtml(app.desc || "")}</div>
-      <div class="tile-tags">${(app.tags || []).map(t => `<span>${escapeHtml(t)}</span>`).join("")}</div>
-      ${app.repo ? `<a class="tile-src" href="${escapeAttr(app.repo)}" target="_blank" rel="noopener" title="查看源码">{'</>'}</a>` : ""}
-    `;
-
-    el.addEventListener("click", (e) => {
-      if (e.target.closest(".tile-src")) return;
+    // 点击跳转
+    card.addEventListener("click", function () {
       if (app.url) window.open(app.url, "_blank", "noopener");
     });
-    el.addEventListener("keydown", (e) => {
-      if ((e.key === "Enter" || e.key === " ") && app.url) { e.preventDefault(); window.open(app.url, "_blank", "noopener"); }
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (app.url) window.open(app.url, "_blank", "noopener");
+      }
     });
 
-    if (!coarse && !reduceMotion) attachTileFx(el);
-    return el;
+    return card;
   }
 
-  // 鼠标跟随光晕 + 克制 3D 倾斜
-  function attachTileFx(tile) {
-    tile.addEventListener("pointermove", (e) => {
-      const r = tile.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      tile.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
-      tile.style.setProperty("--my", (py * 100).toFixed(1) + "%");
-      const rx = (0.5 - py) * 8;
-      const ry = (px - 0.5) * 8;
-      tile.style.transform = `perspective(820px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-4px)`;
+  /* 筛选 */
+  function applyFilter() {
+    $$(".card", appGrid).forEach(function (c) {
+      var show = currentCat === "全部" || c.dataset.cat === currentCat;
+      c.hidden = !show;
     });
-    tile.addEventListener("pointerleave", () => { tile.style.transform = ""; });
   }
 
-  /* =====================================================================
-     时钟 / 问候
-     ===================================================================== */
-  const WD = ["日","一","二","三","四","五","六"];
-  function tick() {
-    const d = new Date();
-    const p = (n) => String(n).padStart(2,"0");
-    clockTime.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-    clockDate.textContent = `${d.getFullYear()}·${d.getMonth()+1}·${d.getDate()} 周${WD[d.getDay()]}`;
-    const h = d.getHours();
-    let g = "你好";
-    if (h < 5) g = "凌晨好"; else if (h < 11) g = "早上好"; else if (h < 13) g = "中午好"; else if (h < 18) g = "下午好"; else g = "晚上好";
-    greetEl.textContent = g;
+  /* Hero 内嵌搜索过滤 */
+  function onHsInput() {
+    var q = hsInput.value.trim().toLowerCase();
+    if (!q) { applyFilter(); return; }
+    $$(".card", appGrid).forEach(function (c) {
+      var text = (c.textContent || "").toLowerCase();
+      c.hidden = !text.includes(q);
+    });
   }
 
   /* =====================================================================
      命令面板
      ===================================================================== */
-  function openCmdk() {
-    cmdk.hidden = false; cmdkInput.value = ""; renderCmdk(""); setTimeout(() => cmdkInput.focus(), 30);
+  function openCmd() {
+    cmdOverlay.hidden = false;
+    cmdInput.value = "";
+    renderCmd("");
+    setTimeout(function () { cmdInput.focus(); }, 30);
   }
-  function closeCmdk() { cmdk.hidden = true; cmdkInput.blur(); }
-  function renderCmdk(query) {
-    const q = query.trim().toLowerCase();
-    const list = allApps.filter(a => {
+  function closeCmd() {
+    cmdOverlay.hidden = true;
+    cmdInput.blur();
+  }
+
+  function renderCmd(query) {
+    var q = query.trim().toLowerCase();
+    var list = allApps.filter(function (a) {
       if (!q) return true;
-      return (a.title||"").toLowerCase().includes(q) || (a.desc||"").toLowerCase().includes(q)
-        || (a._category||"").toLowerCase().includes(q) || (a.tags||[]).join(" ").toLowerCase().includes(q);
+      var fields = [a.title, a.desc, a._cat].concat(a.tags || []).join(" ").toLowerCase();
+      return fields.indexOf(q) !== -1;
     });
-    cmdkList.innerHTML = "";
-    if (!list.length) {
-      const li = document.createElement("li"); li.className = "cmdk-empty"; li.textContent = "没有匹配的应用…";
-      cmdkList.appendChild(li); cmdkActive = -1; return;
+
+    cmdResults.innerHTML = "";
+
+    if (list.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "cmd-empty";
+      empty.textContent = "没有找到匹配的应用";
+      cmdResults.appendChild(empty);
+      cmdListRef = [];
+      cmdActive = -1;
+      return;
     }
-    list.forEach((a,i) => {
-      const li = document.createElement("li"); li.className = "cmdk-item" + (i===0?" active":"");
-      li.dataset.i = i; li.innerHTML = `
-        <span class="ci-emoji">${escapeHtml(a.emoji||"✦")}</span>
-        <div class="ci-main"><div class="ci-title">${escapeHtml(a.title)}</div><div class="ci-meta">${(a.desc||"")}${a.status?` · ${a.status}`:""}</div></div>
-        <span class="ci-cat">${escapeHtml(a._category)}</span>`;
-      li.addEventListener("mouseenter", () => setActive(i));
-      li.addEventListener("click", () => openApp(a));
-      cmdkList.appendChild(li);
-    });
-    cmdkActive = 0; cmdk._list = list;
-  }
-  function setActive(i) {
-    const items = $$(".cmdk-item", cmdkList); if(!items.length)return;
-    cmdkActive=(i+items.length)%items.length; items.forEach((el,idx)=>el.classList.toggle("active",idx===cmdkActive));
-    items[cmdkActive].scrollIntoView({block:"nearest"});
-  }
-  function openActive(){const l=cmdk._list||[];if(cmdkActive>=0&&l[cmdkActive])openApp(l[cmdkActive]);}
-  function openApp(a){if(a&&a.url)window.open(a.url,"_blank","noopener");closeCmdk();}
 
-  /* =====================================================================
-     添加应用 / 管理
-     ===================================================================== */
-  function fillCategorySelect() {
-    const names = (DATA&&DATA.categories||[]).map(c=>c.name);
-    userApps.forEach(a=>{if(a.category&&!names.includes(a.category))names.push(a.category);});
-    addCategory.innerHTML = names.map(function(n){ return '<option value="'+escapeAttr(n)+'">'+escapeHtml(n)+'</option>'; }).join("")+'<option value="__new__">＋ 新建分类…</option>';
-  }
-  let newCatInput = null;
-  function ensureNewCatInput(){
-    if(newCatInput) return newCatInput;
-    newCatInput=document.createElement("input");newCatInput.name="newcat";
-    newCatInput.placeholder="输入新分类名";
-    newCatInput.style.cssText=
-      "margin-top:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-size:14px;padding:10px 12px;outline:0;font-family:inherit;display:none;";
-    addCategory.closest(".fld").appendChild(newCatInput);
-    return newCatInput;
-  }
-  function openAdd(){
-    fillCategorySelect();if(newCatInput)newCatInput.style.display="none";
-    addForm.reset();addModal.hidden=false;
-    setTimeout(()=>addForm.querySelector('[name="title"]').focus(),30);
-  }
-  function closeAdd(){addModal.hidden=true;}
-  addCategory.addEventListener("change",()=>{
-    const inp=ensureNewCatInput();inp.style.display=addCategory.value==="__new__"?"block":"none";
-    if(addCategory.value==="__new__")inp.focus();
-  });
-  addForm.addEventListener("submit",(e)=>{
-    e.preventDefault();const fd=new FormData(addForm);
-    let category=fd.get("category");
-    if(category==="__new__")category=(fd.get("newcat")||"").toString().trim()||"未分类";
-    const app={
-      id:"u_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
-      title:(fd.get("title")||"").toString().trim()||"未命名",
-      url:(fd.get("url")||"").toString().trim(),
-      desc:(fd.get("desc")||"").toString().trim(),
-      emoji:(fd.get("emoji")||"🚀").toString().trim()||"🚀",
-      color:(fd.get("color")||"#22d3ee").toString(),
-      tags:(fd.get("tags")||"").toString().split(/[,，]/).map(s=>s.trim()).filter(Boolean),
-      status:(fd.get("status")||"已上线").toString(),
-      size:(fd.get("size")||"sm").toString(),
-      category:category,
-    };
-    if(!app.url){alert("请填写有效的链接 URL");return;}
-    userApps.push(app);saveUserApps();merge();renderBento();renderFilters();applyFilter();closeAdd();
-  });
-  function openManage(){renderManage();manageModal.hidden=false;}
-  function closeManage(){manageModal.hidden=true;}
-  function renderManage(){
-    manageList.innerHTML="";
-    if(!userApps.length){manageEmpty.hidden=false;return;}
-    manageEmpty.hidden=true;
-    userApps.forEach(a=>{
-      const li=document.createElement("li");li.className="manage-item";
-      li.innerHTML=`<span class="mi-emoji">${escapeHtml(a.emoji||"✦")}</span><div class="mi-main"><div class="mi-title">${escapeHtml(a.title)}</div><div class="mi-cat">${escapeHtml(a.category)} · ${escapeHtml(a.status||"")}</div></div><button class="mi-del" type="button" data-id="${escapeAttr(a.id)}">删除</button>`;
-      li.querySelector(".mi-del").addEventListener("click",()=>{
-        userApps=userApps.filter(x=>x.id!==a.id);saveUserApps();merge();renderBento();renderFilters();applyFilter();renderManage();
-      });manageList.appendChild(li);
+    list.forEach(function (a, i) {
+      var li = document.createElement("li");
+      li.className = "cmd-item" + (i === 0 ? " active" : "");
+      li.dataset.idx = i;
+      li.innerHTML =
+        '<span class="ci-icon">' + esc(a.emoji || '✦') + '</span>' +
+        '<div class="ci-info">' +
+          '<div class="ci-name">' + esc(a.title || '') + '</div>' +
+          '<div class="ci-detail">' + esc(a.desc || '') + '</div>' +
+        '</div>' +
+        '<span class="ci-cat-pill">' + esc(a._cat || '') + '</span>';
+
+      li.addEventListener("mouseenter", function () { setCmdActive(i); });
+      li.addEventListener("click", function () { openApp(a); });
+      cmdResults.appendChild(li);
     });
+
+    cmdListRef = list;
+    cmdActive = 0;
   }
 
-  /* =====================================================================
-     工具
-     ===================================================================== */
-  function escapeHtml(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
-  function escapeAttr(s){return escapeHtml(s);}
-  function isTyping(){const a=document.activeElement;return a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT"||a.isContentEditable);}
+  function setCmdActive(i) {
+    var items = $$(".cmd-item", cmdResults);
+    if (!items.length) return;
+    cmdActive = ((i % items.length) + items.length) % items.length;
+    items.forEach(function (el, idx) {
+      el.classList.toggle("active", idx === cmdActive);
+    });
+    if (items[cmdActive]) items[cmdActive].scrollIntoView({ block: "nearest" });
+  }
+
+  function openApp(a) {
+    if (a && a.url) window.open(a.url, "_blank", "noopener");
+    closeCmd();
+  }
 
   /* =====================================================================
      事件绑定
      ===================================================================== */
-  function bind(){
-    themeToggle.addEventListener("click", toggleTheme);
-    cmdTrigger.addEventListener("click",openCmdk);
-    $("#cmdk-close").addEventListener("click",closeCmdk);
-    cmdk.addEventListener("click",(e)=>{if(e.target===cmdk)closeCmdk();});
-    cmdkInput.addEventListener("input",()=>renderCmdk(cmdkInput.value));
-    cmdkInput.addEventListener("keydown",(e)=>{
-      if(e.key==="ArrowDown"){e.preventDefault();setActive(cmdkActive+1);}
-      else if(e.key==="ArrowUp"){e.preventDefault();setActive(cmdkActive-1);}
-      else if(e.key==="Enter"){e.preventDefault();openActive();}
-      else if(e.key==="Escape"){e.preventDefault();closeCmdk();}
+  function bind() {
+    themeToggle.addEventListener("click", function () {
+      var cur = document.documentElement.dataset.theme || "light";
+      applyTheme(cur === "dark" ? "light" : "dark");
     });
-    $("#btn-add").addEventListener("click",openAdd);
-    $("#add-close").addEventListener("click",closeAdd);
-    addModal.addEventListener("click",(e)=>{if(e.target===addModal)closeAdd();});
-    $("#manage-btn").addEventListener("click",()=>{closeAdd();openManage();});
-    $("#manage-close").addEventListener("click",closeManage);
-    manageModal.addEventListener("click",(e)=>{if(e.target===manageModal)closeManage();});
-    document.addEventListener("keydown",(e)=>{
-      if((e.metaKey||e.ctrlKey)&&(e.key==="k"||e.key==="K")){e.preventDefault();cmdk.hidden?openCmdk():closeCmdk();return;}
-      if(e.key==="/"&&!isTyping()&&cmdk.hidden){e.preventDefault();openCmdk();return;}
-      if(e.key==="Escape"){if(!addModal.hidden)closeAdd();else if(!manageModal.hidden)closeManage();}
+
+    // Hero 搜索
+    hsInput.addEventListener("input", onHsInput);
+
+    // 顶栏搜索按钮
+    searchTrigger.addEventListener("click", openCmd);
+
+    // 命令面板
+    cmdClose.addEventListener("click", closeCmd);
+    cmdOverlay.addEventListener("click", function (e) {
+      if (e.target === cmdOverlay) closeCmd();
+    });
+    cmdInput.addEventListener("input", function () { renderCmd(cmdInput.value); });
+    cmdInput.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setCmdActive(cmdActive + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setCmdActive(cmdActive - 1); }
+      else if (e.key === "Enter") { e.preventDefault(); var l = cmdListRef; if (cmdActive >= 0 && l[cmdActive]) openApp(l[cmdActive]); }
+      else if (e.key === "Escape") { e.preventDefault(); closeCmd(); }
+    });
+
+    // 全局快捷键
+    document.addEventListener("keydown", function (e) {
+      // ⌘K / Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        cmdOverlay.hidden ? openCmd() : closeCmd();
+        return;
+      }
+      // / 打开命令面板
+      if (e.key === "/" && !isTyping() && cmdOverlay.hidden) {
+        e.preventDefault();
+        openCmd();
+        return;
+      }
+      // Esc 关闭
+      if (e.key === "Escape" && !cmdOverlay.hidden) {
+        closeCmd();
+      }
     });
   }
 
   /* =====================================================================
      启动
      ===================================================================== */
-  async function init(){
+  async function init() {
     initTheme();
-    tick();setInterval(tick,1000);bind();
-    try{
-      const res=await fetch("data/apps.json",{cache:"no-store"});
-      if(!res.ok)throw new Error("HTTP "+res.status);
-      DATA=await res.json();
-    }catch(err){
-      bento.innerHTML=`<div style="padding:40px;text-align:center;color:var(--txt-2);max-width:600px;margin:0 auto;line-height:1.7">
-        无法加载 <code>data/apps.json</code>。<br/>请通过本地服务器访问或部署后访问线上地址。<br/><br/>
-        <small style="color:var(--txt-3)">${escapeHtml(String(err))}</small></div>`;
+    bind();
+
+    try {
+      var res = await fetch("data/apps.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      DATA = await res.json();
+    } catch (err) {
+      appGrid.innerHTML =
+        '<div style="grid-column:1/-1;padding:48px 16px;text-align:center;color:var(--text2);line-height:1.8">' +
+        '<p style="font-size:16px;margin-bottom:8px;">无法加载应用数据</p>' +
+        '<p style="font-size:13px;color:var(--text3);">请确认通过 HTTP 服务器访问或已部署到线上。</p></div>';
       return;
     }
-    renderProfile();merge();renderFilters();renderBento(); // 筛选默认全部 → 不隐藏任何
+
+    // 设置 Hero 文案
+    if (DATA.profile) {
+      if (DATA.profile.name) heroTitle.textContent = DATA.profile.name;
+      if (DATA.profile.subtitle) heroDesc.textContent = DATA.profile.subtitle;
+    }
+
+    flattenApps();
+    renderCats();
+    renderGrid();
   }
 
-  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
