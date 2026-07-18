@@ -1,0 +1,12 @@
+{
+  "name": "app-center",
+  "version": "1.0.0",
+  "description": "星盘控制台 · 深色沉浸式个人应用中心 / Bento 磁贴启动台（纯静态，零构建）",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "python3 -m http.server 8080"
+  },
+  "keywords": ["navigation", "dashboard", "bento", "static", "github-pages"],
+  "license": "MIT"
+}
