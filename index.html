@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <title>星盘控制台 · 我的小应用母舰</title>
+  <meta name="description" content="深色沉浸式「星盘控制台」——我的全部小应用统一入口，纯静态、免 key、Bento 磁贴启动台。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%B6%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <!-- 极光 / 星盘背景层 -->
+  <div class="space-bg" aria-hidden="true"></div>
+  <div class="space-grid" aria-hidden="true"></div>
+  <div class="space-stars" aria-hidden="true"></div>
+
+  <!-- 顶部状态栏（OS 气质） -->
+  <header class="statusbar glass">
+    <div class="sb-left">
+      <div class="sb-logo">✶</div>
+      <div class="sb-id">
+        <div class="sb-name">星盘控制台</div>
+        <div class="sb-handle">@liumingmusic</div>
+      </div>
+    </div>
+    <div class="sb-right">
+      <div class="sb-clock">
+        <span id="clock-time">--:--:--</span>
+        <span id="clock-date">----</span>
+      </div>
+      <span class="sb-greet" id="greet">你好</span>
+      <button class="btn-add" id="btn-add" type="button">＋ 添加应用</button>
+      <a class="sb-github" id="github-link" href="#" target="_blank" rel="noopener" title="GitHub 主页" aria-label="GitHub">⌥</a>
+    </div>
+  </header>
+
+  <!-- 英雄区 -->
+  <section class="hero">
+    <div class="hero-eyebrow">CONSOLE · 母舰入口</div>
+    <h1 class="hero-title">欢迎回到 <span class="grad">星盘控制台</span></h1>
+    <p class="hero-sub" id="hero-sub">我的小应用母舰 · 纯静态 · 免 key</p>
+    <button class="cmd-trigger glass" id="cmd-trigger" type="button">
+      <span class="cmd-icon">⌘</span>
+      <span class="cmd-text">按 <kbd>/</kbd> 或 <kbd>⌘K</kbd> 搜索应用…</span>
+      <span class="cmd-kbd">⌘K</span>
+    </button>
+  </section>
+
+  <!-- Bento 磁贴主区 -->
+  <main id="bento" class="bento" aria-label="应用磁贴"></main>
+
+  <footer class="foot">
+    <span>星盘控制台 · 纯静态导航 · 数据来自 <code>data/apps.json</code></span>
+    <span class="foot-dim">点击磁贴直达 · 右上角 </> 看源码 · ＋ 添加你的新应用</span>
+  </footer>
+
+  <!-- 命令面板 -->
+  <div class="cmdk-overlay" id="cmdk" hidden>
+    <div class="cmdk glass" role="dialog" aria-modal="true" aria-label="命令面板">
+      <div class="cmdk-input-wrap">
+        <span class="cmdk-search">⌕</span>
+        <input id="cmdk-input" class="cmdk-input" placeholder="搜索应用、标签、分类…" autocomplete="off" spellcheck="false" />
+        <button class="cmdk-close" id="cmdk-close" type="button" title="关闭 (Esc)">Esc</button>
+      </div>
+      <ul class="cmdk-list" id="cmdk-list"></ul>
+      <div class="cmdk-hint"><kbd>↑</kbd><kbd>↓</kbd> 选择 · <kbd>Enter</kbd> 打开 · <kbd>Esc</kbd> 关闭</div>
+    </div>
+  </div>
+
+  <!-- 添加应用弹窗 -->
+  <div class="modal-overlay" id="add-modal" hidden>
+    <div class="modal glass" role="dialog" aria-modal="true" aria-label="添加应用">
+      <div class="modal-head"><h3>添加应用</h3><button class="modal-x" id="add-close" type="button" aria-label="关闭">✕</button></div>
+      <form id="add-form" class="modal-form">
+        <label class="fld">标题
+          <input name="title" required maxlength="20" placeholder="例如：我的新工具" />
+        </label>
+        <label class="fld">链接 URL
+          <input name="url" required type="url" placeholder="https://…" />
+        </label>
+        <div class="row">
+          <label class="fld">Emoji
+            <input name="emoji" maxlength="2" placeholder="🚀" value="🚀" />
+          </label>
+          <label class="fld">辉光色
+            <input name="color" type="color" value="#22d3ee" />
+          </label>
+        </div>
+        <div class="row">
+          <label class="fld">分类
+            <select name="category" id="add-category"></select>
+          </label>
+          <label class="fld">状态
+            <select name="status">
+              <option value="已上线">已上线</option>
+              <option value="建设中">建设中</option>
+              <option value="计划中">计划中</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label class="fld">磁贴大小
+            <select name="size">
+              <option value="sm">小 (1×1)</option>
+              <option value="lg">大 (2×2)</option>
+            </select>
+          </label>
+          <label class="fld">标签（逗号分隔）
+            <input name="tags" placeholder="工具, 新" />
+          </label>
+        </div>
+        <label class="fld">简介
+          <input name="desc" maxlength="40" placeholder="一句话描述" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="manage-btn">管理我的添加</button>
+          <button type="submit" class="btn-primary">挂上控制台</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 管理我的添加 -->
+  <div class="modal-overlay" id="manage-modal" hidden>
+    <div class="modal glass" role="dialog" aria-modal="true" aria-label="我添加的应用">
+      <div class="modal-head"><h3>我添加的应用</h3><button class="modal-x" id="manage-close" type="button" aria-label="关闭">✕</button></div>
+      <ul class="manage-list" id="manage-list"></ul>
+      <div class="manage-empty" id="manage-empty" hidden>还没有通过页面添加的应用。点「＋ 添加应用」挂一个吧。</div>
+    </div>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
