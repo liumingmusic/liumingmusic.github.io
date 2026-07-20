@@ -19,13 +19,15 @@
         { "title": "历史上的今天", "desc": "每日回看历史上的今天", "url": "https://liumingmusic.github.io/this-day-in-history/", "repo": "https://github.com/liumingmusic/this-day-in-history", "emoji": "📜", "color": "#e0a13a", "tags": ["历史"], "status": "已上线", "size": "sm" },
         { "title": "每日诗词", "desc": "每天一首中国古诗词", "url": "https://liumingmusic.github.io/daily-poetry/", "repo": "https://github.com/liumingmusic/daily-poetry", "emoji": "🪶", "color": "#39c0a0", "tags": ["诗词", "古典"], "status": "已上线", "size": "sm" },
         { "title": "每日一句", "desc": "每日一句治愈 / 箴言", "url": "https://liumingmusic.github.io/daily-quote/", "repo": "https://github.com/liumingmusic/daily-quote", "emoji": "💬", "color": "#4aa3e0", "tags": ["句子"], "status": "已上线", "size": "sm" },
-        { "title": "成语故事", "desc": "每日一成语，典故 + 释义", "url": "https://liumingmusic.github.io/idiom-story/", "repo": "https://github.com/liumingmusic/idiom-story", "emoji": "📖", "color": "#39c0a0", "tags": ["成语", "启蒙"], "status": "已上线", "size": "sm" }
+        { "title": "成语故事", "desc": "每日一成语，典故 + 释义", "url": "https://liumingmusic.github.io/idiom-story/", "repo": "https://github.com/liumingmusic/idiom-story", "emoji": "📖", "color": "#39c0a0", "tags": ["成语", "启蒙"], "status": "已上线", "size": "sm" },
+        { "title": "围棋·黑白问道", "desc": "传统围棋，黑白之间的对弈与思辨", "url": "https://liumingmusic.github.io/weiqi-hbwd/", "repo": "https://github.com/liumingmusic/weiqi-hbwd", "emoji": "⚫", "color": "#e6c068", "tags": ["围棋", "博弈"], "status": "已上线", "size": "sm" }
       ]
     },
     {
       "name": "学习提升",
       "apps": [
-        { "title": "英语卡片", "desc": "每日一个英语单词卡", "url": "https://liumingmusic.github.io/english-card/", "repo": "https://github.com/liumingmusic/english-card", "emoji": "🔤", "color": "#5fc98a", "tags": ["英语", "单词"], "status": "已上线", "size": "sm" }
+        { "title": "英语卡片", "desc": "每日一个英语单词卡", "url": "https://liumingmusic.github.io/english-card/", "repo": "https://github.com/liumingmusic/english-card", "emoji": "🔤", "color": "#5fc98a", "tags": ["英语", "单词"], "status": "已上线", "size": "sm" },
+        { "title": "答题闯关", "desc": "K12 学科答题闯关，离线题库", "url": "https://liumingmusic.github.io/quiz-challenge/", "repo": "https://github.com/liumingmusic/quiz-challenge", "emoji": "🎯", "color": "#ff7eb6", "tags": ["答题", "学习"], "status": "已上线", "size": "sm" }
       ]
     },
     {
